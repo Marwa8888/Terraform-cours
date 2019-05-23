@@ -1,3 +1,7 @@
+besoin des deux fichiers:
+ 	variables.tf
+	terraform.tfvars
+--------------------------------------------
 provider "azurerm"{
 	
 }
