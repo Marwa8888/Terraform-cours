@@ -1,3 +1,7 @@
+lien: cluster terraform: https://docs.microsoft.com/fr-fr/azure/terraform/terraform-create-vm-cluster-with-infrastructure
+
+
+
 # Configure the Microsoft Azure Provider
 provider "azurerm" {
     subscription_id = "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
