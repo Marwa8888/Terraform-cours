@@ -1,5 +1,5 @@
 lien: cluster terraform: https://docs.microsoft.com/fr-fr/azure/terraform/terraform-create-vm-cluster-with-infrastructure
-
+commande fichier variables: terraform apply -var-file=terraform.tt
 
 
 # Configure the Microsoft Azure Provider
