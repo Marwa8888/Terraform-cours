@@ -1,0 +1,139 @@
+provider "azurerm"{
+	
+}
+
+resource "azurerm_resource_group" "rg" {
+	name = "${var.nom_group}"
+	location = "${var.location}"
+}
+resource "azurerm_virtual_network" "vmss" {
+ name                = "${var.nom_reseau}"
+ address_space       = "${var.adresse_space}"
+ location            = "${var.location}"
+ resource_group_name = "${azurerm_resource_group.rg.name}"
+}
+resource "azurerm_subnet" "vms" {
+ name                 = "${var.nom_sousreseau}${count.index}"
+ resource_group_name  = "${azurerm_resource_group.rg.name}"
+ virtual_network_name = "${azurerm_virtual_network.vmss.name}"
+ address_prefix       = "${var.ip_sousreseau1}"
+}
+resource "azurerm_subnet" "vmsr" {
+ name                 = "${var.nom_sousreseau}${count.index}"
+ resource_group_name  = "${azurerm_resource_group.rg.name}"
+ virtual_network_name = "${azurerm_virtual_network.vmss.name}"
+ address_prefix       = "${var.ip_sousreseau2}"
+}
+resource "azurerm_network_security_group" "myterraformnsg" {
+    name                = "myNetworkSecurityGroup"
+    location            = "${var.location}"
+    resource_group_name = "${azurerm_resource_group.rg.name}"
+    
+    security_rule {
+        name                       = "${var.name_security}"
+        priority                   = "${var.priority}"
+        direction                  = "${var.direction}"
+        access                     = "${var.access}"
+        protocol                   = "${var.protocol}"
+        source_port_range          = "${var.source_port_range}"
+        destination_port_range     = "${var.destination_port_range}"
+        source_address_prefix      = "${var.source_address_prefix}"
+        destination_address_prefix = "${var.destination_address_prefix}"
+}
+}
+resource "azurerm_network_interface" "main" {
+  count               = 3
+  name                = "acctni${count.index}"
+  location            = "${var.location}"
+  resource_group_name = "${azurerm_resource_group.rg.name}"
+  network_security_group_id = "${azurerm_network_security_group.myterraformnsg.id}"
+  ip_configuration {
+    name                          = "${var.nom_configuration}"
+    subnet_id                     = "${azurerm_subnet.vms.id}"
+    private_ip_address_allocation = "Dynamic"
+    }
+  }
+resource "azurerm_network_interface" "mainn" {
+  count               = 2
+  name                = "acctni${count.index}"
+  location            = "${var.location}"
+  resource_group_name = "${azurerm_resource_group.rg.name}"
+  network_security_group_id = "${azurerm_network_security_group.myterraformnsg.id}"
+  ip_configuration {
+    name                          = "${var.nom_configuration}"
+    subnet_id                     = "${azurerm_subnet.vmsr.id}"
+    private_ip_address_allocation = "Dynamic"
+  }
+}
+resource "azurerm_virtual_machine" "main" {
+  count                 = 3
+  name                  = "acctvm${count.index}"
+  location              = "${var.location}"
+  resource_group_name   = "${azurerm_resource_group.rg.name}"
+  network_interface_ids = ["${element(azurerm_network_interface.main.*.id,count.index)}"]
+  vm_size               = "${var.taille_machine}"
+  storage_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "16.04-LTS"
+    version   = "latest"
+  }
+  storage_os_disk {
+    name              = "${var.nom_osdisk}${count.index}"
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
+  }
+  os_profile {
+    computer_name  = "${var.nom_machine}"
+    admin_username = "${var.username}"
+    admin_password = "${var.motde_passe}"
+  }
+  os_profile_linux_config {
+    disable_password_authentication = true
+    ssh_keys{
+        path   = "/home/marwa/.ssh/authorized_keys"
+        key_data = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCrwW1tHBF88ZGHquaif5QID3Rh+g4O88BVB5QnC2p6cOHrZy89WvHEoA47y/RcjdUt/thV2kSt6MxsKQ+MTLMCoZp9AOOJnrnbFuPM8Y9x3QCQl09JPl/P9RcSSsPDWuyuoYOM1ACRqnfP5mQhYAf0zXhga2gcSjwhtXw6S/3BVqu6hF/R9lVhnCvkEY5jZNztrWSr6G3SBLsj0XGhcfktlRCCKe/zMfLeTsBl0Rvb2R9Bk7Gd6gLX+S5EG93eW7cNlD6guCTdszuFCTvTLdJJho0609XqKOEda+f6nuY/xLQTooLj97GeMk7w9VH4XLMdsvIawDsmeGCS3q3kyhVR"
+    }
+  }
+  tags = {
+    environment = "staging"
+  }
+}
+
+resource "azurerm_virtual_machine" "main2" {
+  count                 = 2
+  name                  = "acctvm${count.index}"
+  location              = "${var.location}"
+  resource_group_name   = "${azurerm_resource_group.rg.name}"
+  network_interface_ids = ["${element(azurerm_network_interface.mainn.*.id,count.index)}"]
+  vm_size               = "${var.taille_machine}"
+  storage_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "16.04-LTS"
+    version   = "latest"
+  }
+  storage_os_disk {
+    name              = "{var.nom_osdisk}${count.index}"
+    caching           = "{var.caching_disk}"
+    create_option     = "${var.option_disk}"
+    managed_disk_type = "Standard_LRS"
+  }
+  os_profile {
+    computer_name  = "${var.nom_machine}"
+    admin_username = "${var.username}"
+    admin_password = "${var.motde_passe}"
+  }
+  os_profile_linux_config {
+    disable_password_authentication = true
+    ssh_keys{
+        path   = "/home/marwa/.ssh/authorized_keys"
+        key_data = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCrwW1tHBF88ZGHquaif5QID3Rh+g4O88BVB5QnC2p6cOHrZy89WvHEoA47y/RcjdUt/thV2kSt6MxsKQ+MTLMCoZp9AOOJnrnbFuPM8Y9x3QCQl09JPl/P9RcSSsPDWuyuoYOM1ACRqnfP5mQhYAf0zXhga2gcSjwhtXw6S/3BVqu6hF/R9lVhnCvkEY5jZNztrWSr6G3SBLsj0XGhcfktlRCCKe/zMfLeTsBl0Rvb2R9Bk7Gd6gLX+S5EG93eW7cNlD6guCTdszuFCTvTLdJJho0609XqKOEda+f6nuY/xLQTooLj97GeMk7w9VH4XLMdsvIawDsmeGCS3q3kyhVR"
+    }
+    }
+  
+  tags = {
+    environment = "staging"
+  }
+}
