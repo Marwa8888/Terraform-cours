@@ -19,9 +19,10 @@ resource "azurerm_subnet" "vms" {
  virtual_network_name = "${element(azurerm_virtual_network.vnet.*.name, count.index)}"
  address_prefix       = "10.${count.index}.0.0/24"
 }
-resource "azurerm_network_interface" "main1" {
+
+resource "azurerm_network_interface" "main11" {
   count               = 2
-  name                = "network1${count.index}"
+  name                = "interface1${count.index}"
   location            = "${var.location}"
   resource_group_name = "${azurerm_resource_group.rg.name}"
  
@@ -33,9 +34,10 @@ resource "azurerm_network_interface" "main1" {
   tags {
     environment = "tech"
   }
-  }
-resource "azurerm_network_interface" "main2" {
-  name                = "network2"
+}
+resource "azurerm_network_interface" "main12" {
+
+  name                = "interface12345"
   location            = "${var.location}"
   resource_group_name = "${azurerm_resource_group.rg.name}"
 
@@ -48,20 +50,22 @@ resource "azurerm_network_interface" "main2" {
     environment = "apps"
   }
 }
-resource "azurerm_network_interface" "main3" {
-  name                = "network3$"
+resource "azurerm_network_interface" "main13" {
+
+  name                = "interface123456"
   location            = "${var.location}"
   resource_group_name = "${azurerm_resource_group.rg.name}"
 
   ip_configuration {
     name                          = "${var.nom_configuration}"
-    subnet_id                     = "${element(azurerm_subnet.vms.*.id, 3)}"
+    subnet_id                     = "${element(azurerm_subnet.vms.*.id,3)}"
     private_ip_address_allocation = "Dynamic"
   }
   tags {
     environment = "data"
   }
 }
+
 # Create Network Security Group and rule
 resource "azurerm_network_security_group" "onprem-nsg1" {
     name                =  "network1"
@@ -70,7 +74,7 @@ resource "azurerm_network_security_group" "onprem-nsg1" {
 
     security_rule {
         name                       = "SSH"
-        priority                   = 1001
+        priority                   = 102
         direction                  = "Inbound"
         access                     = "Allow"
         protocol                   = "Tcp"
@@ -81,7 +85,7 @@ resource "azurerm_network_security_group" "onprem-nsg1" {
     }
   security_rule {
     name                       = "http"
-    priority                   = 1001
+    priority                   = 104
     direction                  = "Inbound"
     access                     = "Allow"
     protocol                   = "Tcp"
@@ -92,7 +96,7 @@ resource "azurerm_network_security_group" "onprem-nsg1" {
   }
   security_rule {
     name                       = "appk"
-    priority                   = 1001
+    priority                   = 105
     direction                  = "Outbound"
     access                     = "Allow"
     protocol                   = "Tcp"
@@ -117,7 +121,7 @@ resource "azurerm_network_security_group" "onprem-nsg2" {
 
   security_rule {
     name                       = "app"
-    priority                   = 1001
+    priority                   = 106
     direction                  = "Inbound"
     access                     = "Allow"
     protocol                   = "Tcp"
@@ -129,7 +133,7 @@ resource "azurerm_network_security_group" "onprem-nsg2" {
 
   security_rule {
     name                       = "appp"
-    priority                   = 1001
+    priority                   = 1008
     direction                  = "Outbound"
     access                     = "Allow"
     protocol                   = "Tcp"
@@ -154,7 +158,7 @@ resource "azurerm_network_security_group" "onprem-nsg3" {
 
   security_rule {
     name                       = "data"
-    priority                   = 1001
+    priority                   = 1009
     direction                  = "Inbound"
     access                     = "Allow"
     protocol                   = "Tcp"
@@ -163,15 +167,37 @@ resource "azurerm_network_security_group" "onprem-nsg3" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
+  security_rule {
+    name                       = "fff"
+    priority                   = 1009
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
 
   security_rule {
     name                       = "dataa"
-    priority                   = 1001
+    priority                   = 108
     direction                  = "Outbound"
     access                     = "Allow"
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "445"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+  security_rule {
+    name                       = "datha"
+    priority                   = 108888
+    direction                  = "Inbount"
+    access                     = "Deny"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "*"
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
@@ -188,7 +214,7 @@ resource "azurerm_virtual_machine" "main1" {
   name                  = "tech-machine${count.index}"
   location              = "${var.location}"
   resource_group_name   = "${azurerm_resource_group.rg.name}"
-  network_interface_ids = ["${element(azurerm_network_interface.main1.*.id, count.index)}"]
+  network_interface_ids = ["${element(azurerm_network_interface.main11.*.id, count.index)}"]
   vm_size               = "${var.taille_machine}"
   storage_image_reference {
     publisher = "Canonical"
@@ -218,7 +244,7 @@ resource "azurerm_virtual_machine" "main2" {
   name                  = "appli-machine"
   location              = "${var.location}"
   resource_group_name   = "${azurerm_resource_group.rg.name}"
-  network_interface_ids = ["${azurerm_network_interface.main2.name}"]
+  network_interface_ids = ["${azurerm_network_interface.main12.id}"]
   vm_size               = "${var.taille_machine}"
   storage_image_reference {
     publisher = "Canonical"
@@ -248,7 +274,7 @@ resource "azurerm_virtual_machine" "main3" {
   name                  = "data-machine"
   location              = "${var.location}"
   resource_group_name   = "${azurerm_resource_group.rg.name}"
-  network_interface_ids = ["${azurerm_network_interface.main3.name}"]
+  network_interface_ids = ["${azurerm_network_interface.main13.id}"]
   vm_size               = "${var.taille_machine}"
   storage_image_reference {
     publisher = "Canonical"
@@ -258,7 +284,7 @@ resource "azurerm_virtual_machine" "main3" {
   }
 
   storage_os_disk {
-    name              = "${var.nom_osdisk}"
+    name              = "disk-data"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
