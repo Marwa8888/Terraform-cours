@@ -1,0 +1,44 @@
+k8s-cluster.tf
+
+-----------OUTPUT OMITTED------------------
+# Network
+resource "google_compute_network" "cluster-net" {
+  name                    = "cluster-net"
+  project                 = "${google_project.gke-proj.project_id}"
+  auto_create_subnetworks = "false"
+}
+
+# Subnet for cluster nodes
+resource "google_compute_subnetwork" "nodes-subnet" {
+  name          = "nodes-subnet"
+  project       = "${google_project.gke-proj.project_id}"
+  ip_cidr_range = "10.101.0.0/24"
+  network       = "${google_compute_network.cluster-net.self_link}"
+  region        = "us-east4"
+
+  secondary_ip_range {
+    range_name    = "container-range-1"
+    ip_cidr_range = "172.20.0.0/16"
+  }
+
+  secondary_ip_range {
+    range_name    = "service-range-1"
+    ip_cidr_range = "10.200.0.0/16"
+  }
+}
+
+resource "google_container_cluster" "primary" {
+  project            = "${google_project.gke-proj.project_id}"
+  name               = "semrush-test"
+  zone               = "us-east4-a"
+  initial_node_count = 3
+
+  network    = "${google_compute_network.cluster-net.self_link}"
+  subnetwork = "${google_compute_subnetwork.nodes-subnet.self_link}"
+
+  ip_allocation_policy {
+    cluster_secondary_range_name  = "${google_compute_subnetwork.nodes-subnet.secondary_ip_range.0.range_name}"
+    services_secondary_range_name = "${google_compute_subnetwork.nodes-subnet.secondary_ip_range.1.range_name}"
+  }
+
+}
