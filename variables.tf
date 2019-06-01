@@ -1,0 +1,12 @@
+variable "nomduProjet" {}
+variable "region" {}
+variable "nomreseau" {}
+variable "sunetname" {}
+variable "iprangesubnet" {}
+variable "ssh_public_key_path"  {}
+variable "instancename" {}
+variable "machinetype" {}
+variable "tag" {}
+variable "image" {}
+variable "zone" {}
+variable "ipfixe" {}
