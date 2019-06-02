@@ -25,6 +25,21 @@ pipeline {
         }
       }  
 
-  }
+ stage('TF Plan') {
+      steps {
 
-}
+          sh 'terraform init'
+          sh 'terraform plan -out myplan -lock=false'
+
+      }
+    }
+
+
+
+    stage('TF Apply') {
+      steps {
+
+          sh 'terraform apply -input=false myplan'
+
+      }
+    }
